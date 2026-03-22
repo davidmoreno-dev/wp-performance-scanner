@@ -53,7 +53,7 @@ export async function startScanWorker(): Promise<Worker<ScanJobData, ScanJobResu
   });
 
   scanWorker.on("failed", (job: Job<ScanJobData, ScanJobResult> | undefined, error: Error) => {
-    console.error(`[Worker] Job ${job?.id} failed:`, error.message);
+    console.error(`[Worker] Job ${job?.id} failed for scan ${job?.data?.scanId}:`, error.message);
   });
 
   scanWorker.on("error", (error: Error) => {

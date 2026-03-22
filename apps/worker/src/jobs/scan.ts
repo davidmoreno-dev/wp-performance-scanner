@@ -66,20 +66,31 @@ async function addScanEvent(
 export async function processScanJob(data: ScanJobData): Promise<ScanJobResult> {
   const { scanId, url, publicToken } = data;
 
+  const startTime = Date.now();
+
   console.log(`[ScanJob] Starting scan ${scanId} for URL: ${url}`);
 
   try {
     await updateScanStatus(scanId, "running");
-    await addScanEvent(scanId, "started", `Starting scan for ${url}`);
+    await addScanEvent(scanId, "started", `Starting scan for ${url}`, {
+      url,
+      publicToken,
+      worker_pid: process.pid
+    });
 
     console.log(`[ScanJob] Scan ${scanId} is running. Playwright analysis will be implemented in next phase.`);
 
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    await updateScanStatus(scanId, "completed");
-    await addScanEvent(scanId, "completed", "Scan completed successfully");
+    const duration = Date.now() - startTime;
 
-    console.log(`[ScanJob] Scan ${scanId} completed`);
+    await updateScanStatus(scanId, "completed");
+    await addScanEvent(scanId, "completed", `Scan completed successfully`, {
+      duration_ms: duration,
+      url
+    });
+
+    console.log(`[ScanJob] Scan ${scanId} completed in ${duration}ms`);
 
     return {
       scanId,
@@ -87,11 +98,15 @@ export async function processScanJob(data: ScanJobData): Promise<ScanJobResult> 
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const duration = Date.now() - startTime;
 
-    console.error(`[ScanJob] Scan ${scanId} failed:`, errorMessage);
+    console.error(`[ScanJob] Scan ${scanId} failed after ${duration}ms:`, errorMessage);
 
     await updateScanStatus(scanId, "failed", errorMessage);
-    await addScanEvent(scanId, "failed", `Scan failed: ${errorMessage}`);
+    await addScanEvent(scanId, "failed", `Scan failed: ${errorMessage}`, {
+      duration_ms: duration,
+      error: errorMessage
+    });
 
     return {
       scanId,
