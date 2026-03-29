@@ -1,6 +1,5 @@
 {
   "installCommand": "pnpm install",
   "buildCommand": "pnpm --filter web build",
-  "outputDirectory": "apps/web/.next",
-  "project": "wp-performance-scanner"
+  "outputDirectory": "apps/web/.next"
 }
