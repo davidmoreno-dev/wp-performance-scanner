@@ -1,6 +1,8 @@
 import { Queue } from "bullmq";
+import Redis from "ioredis";
 import { ScanJobData, SCAN_JOB_NAME } from "@wps/shared";
 
+const UPSTASH_REDIS_URL = process.env.UPSTASH_REDIS_URL;
 const REDIS_HOST = process.env.REDIS_HOST || "127.0.0.1";
 const REDIS_PORT = parseInt(process.env.REDIS_PORT || "6379", 10);
 const REDIS_USERNAME = process.env.REDIS_USERNAME || undefined;
@@ -9,16 +11,24 @@ const SCAN_QUEUE_NAME = process.env.BULLMQ_SCAN_QUEUE || "scan-jobs";
 
 const CONNECTION_TIMEOUT_MS = 5000;
 
-const connection = {
-  host: REDIS_HOST,
-  port: REDIS_PORT,
-  username: REDIS_USERNAME,
-  password: REDIS_PASSWORD,
-  maxRetriesPerRequest: 3,
-  connectTimeout: CONNECTION_TIMEOUT_MS,
-  commandTimeout: CONNECTION_TIMEOUT_MS,
-  retryStrategy: () => null
-};
+const connection = UPSTASH_REDIS_URL
+  ? {
+      url: UPSTASH_REDIS_URL,
+      maxRetriesPerRequest: 3,
+      connectTimeout: CONNECTION_TIMEOUT_MS,
+      commandTimeout: CONNECTION_TIMEOUT_MS,
+      retryStrategy: () => null
+    } as any
+  : {
+      host: REDIS_HOST,
+      port: REDIS_PORT,
+      username: REDIS_USERNAME,
+      password: REDIS_PASSWORD,
+      maxRetriesPerRequest: 3,
+      connectTimeout: CONNECTION_TIMEOUT_MS,
+      commandTimeout: CONNECTION_TIMEOUT_MS,
+      retryStrategy: () => null
+    };
 
 export class RedisConnectionError extends Error {
   constructor(message: string) {
@@ -41,15 +51,18 @@ async function checkRedisConnection(): Promise<boolean> {
   const Redis = (await import("ioredis")).default;
 
   return new Promise((resolve) => {
-    const client = new Redis({
-      host: REDIS_HOST,
-      port: REDIS_PORT,
-      username: REDIS_USERNAME,
-      password: REDIS_PASSWORD,
-      connectTimeout: CONNECTION_TIMEOUT_MS,
-      maxRetriesPerRequest: 1,
-      retryStrategy: () => null
-    });
+    const client = new Redis(UPSTASH_REDIS_URL
+      ? { url: UPSTASH_REDIS_URL, connectTimeout: CONNECTION_TIMEOUT_MS, maxRetriesPerRequest: 1, retryStrategy: () => null } as any
+      : {
+          host: REDIS_HOST,
+          port: REDIS_PORT,
+          username: REDIS_USERNAME,
+          password: REDIS_PASSWORD,
+          connectTimeout: CONNECTION_TIMEOUT_MS,
+          maxRetriesPerRequest: 1,
+          retryStrategy: () => null
+        }
+    );
 
     const timeout = setTimeout(() => {
       client.disconnect();

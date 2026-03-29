@@ -3,6 +3,7 @@ import { ScanJobData, ScanJobResult, SCAN_JOB_NAME } from "@wps/shared";
 import { getRedisConnection } from "./redis";
 import { processScanJob } from "../jobs/scan";
 
+const UPSTASH_REDIS_URL = process.env.UPSTASH_REDIS_URL;
 const REDIS_HOST = process.env.REDIS_HOST || "127.0.0.1";
 const REDIS_PORT = parseInt(process.env.REDIS_PORT || "6379", 10);
 const REDIS_USERNAME = process.env.REDIS_USERNAME || undefined;
@@ -10,12 +11,14 @@ const REDIS_PASSWORD = process.env.REDIS_PASSWORD || undefined;
 const SCAN_QUEUE_NAME = process.env.BULLMQ_SCAN_QUEUE || "scan-jobs";
 const WORKER_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || "2", 10);
 
-const connection = {
-  host: REDIS_HOST,
-  port: REDIS_PORT,
-  username: REDIS_USERNAME,
-  password: REDIS_PASSWORD
-};
+const connection = UPSTASH_REDIS_URL
+  ? { url: UPSTASH_REDIS_URL }
+  : {
+      host: REDIS_HOST,
+      port: REDIS_PORT,
+      username: REDIS_USERNAME,
+      password: REDIS_PASSWORD
+    };
 
 let scanWorker: Worker<ScanJobData, ScanJobResult> | null = null;
 
