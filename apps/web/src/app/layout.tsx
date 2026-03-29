@@ -3,8 +3,14 @@ import type { Metadata } from "next";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "WP Performance Scanner",
-  description: "Analiza webs WordPress y genera informes automáticos."
+  title: {
+    default: "WP Performance Scanner",
+    template: "%s · WP Performance Scanner",
+  },
+  description: "Analiza webs WordPress y genera informes automáticos de rendimiento con Playwright.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 type RootLayoutProps = {
